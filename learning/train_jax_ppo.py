@@ -1,17 +1,3 @@
-# Copyright 2025 DeepMind Technologies Limited
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
 """Train a PPO agent using JAX on the specified environment."""
 
 from datetime import datetime
@@ -45,6 +31,8 @@ from mujoco_playground.config import dm_control_suite_params
 from mujoco_playground.config import locomotion_params
 from mujoco_playground.config import manipulation_params
 
+""" Misc """
+# region
 xla_flags = os.environ.get("XLA_FLAGS", "")
 xla_flags += " --xla_gpu_triton_gemm_any=True"
 os.environ["XLA_FLAGS"] = xla_flags
@@ -62,8 +50,10 @@ warnings.filterwarnings("ignore", category=RuntimeWarning, module="jax")
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="jax")
 # Suppress UserWarnings from absl (used by JAX and TensorFlow)
 warnings.filterwarnings("ignore", category=UserWarning, module="absl")
+# endregion
 
-
+""" Get PPO params """
+# region
 _ENV_NAME = flags.DEFINE_string(
     "env_name",
     "LeapCubeReorient",
@@ -132,7 +122,7 @@ _POLICY_OBS_KEY = flags.DEFINE_string(
     "policy_obs_key", "state", "Policy obs key"
 )
 _VALUE_OBS_KEY = flags.DEFINE_string("value_obs_key", "state", "Value obs key")
-
+# endregion
 
 def get_rl_config(env_name: str) -> config_dict.ConfigDict:
   if env_name in mujoco_playground.manipulation._envs:
@@ -161,6 +151,9 @@ def main(argv):
 
   ppo_params = get_rl_config(_ENV_NAME.value)
 
+  """ Set PPO params and env config """
+  # region 
+  
   if _NUM_TIMESTEPS.present:
     ppo_params.num_timesteps = _NUM_TIMESTEPS.value
   if _PLAY_ONLY.present:
@@ -217,7 +210,10 @@ def main(argv):
 
   print(f"Environment Config:\n{env_cfg}")
   print(f"PPO Training Parameters:\n{ppo_params}")
+  # endregion 
 
+  """ Exp setting """
+  # region
   # Generate unique experiment name
   now = datetime.now()
   timestamp = now.strftime("%Y%m%d-%H%M%S")
@@ -267,6 +263,8 @@ def main(argv):
   # Save environment configuration
   with open(ckpt_path / "config.json", "w", encoding="utf-8") as fp:
     json.dump(env_cfg.to_dict(), fp, indent=4)
+  
+  # endregion
 
   # Define policy parameters function for saving checkpoints
   def policy_params_fn(current_step, make_policy, params):  # pylint: disable=unused-argument
