@@ -152,8 +152,7 @@ def main(argv):
   ppo_params = get_rl_config(_ENV_NAME.value)
 
   """ Set PPO params and env config """
-  # region 
-  
+  # region
   if _NUM_TIMESTEPS.present:
     ppo_params.num_timesteps = _NUM_TIMESTEPS.value
   if _PLAY_ONLY.present:
