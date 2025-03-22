@@ -1,5 +1,11 @@
 """Train a PPO agent using JAX on the specified environment."""
 
+import os, sys
+current_dir = os.path.dirname(__file__)
+parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
+sys.path.append(os.path.join(parent_dir))
+sys.path.append(os.path.join(parent_dir, 'mujoco_playground'))
+
 from datetime import datetime
 import functools
 import json
@@ -31,7 +37,7 @@ from mujoco_playground.config import dm_control_suite_params
 from mujoco_playground.config import locomotion_params
 from mujoco_playground.config import manipulation_params
 
-""" Misc """
+"""Misc"""
 # region
 xla_flags = os.environ.get("XLA_FLAGS", "")
 xla_flags += " --xla_gpu_triton_gemm_any=True"
@@ -41,9 +47,6 @@ os.environ["MUJOCO_GL"] = "egl"
 
 # Ignore the info logs from brax
 logging.set_verbosity(logging.WARNING)
-
-# Suppress warnings
-
 # Suppress RuntimeWarnings from JAX
 warnings.filterwarnings("ignore", category=RuntimeWarning, module="jax")
 # Suppress DeprecationWarnings from JAX
@@ -52,7 +55,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="jax")
 warnings.filterwarnings("ignore", category=UserWarning, module="absl")
 # endregion
 
-""" Get PPO params """
+"""Get RL user-made config (PPO param)."""
 # region
 _ENV_NAME = flags.DEFINE_string(
     "env_name",
@@ -124,6 +127,7 @@ _POLICY_OBS_KEY = flags.DEFINE_string(
 _VALUE_OBS_KEY = flags.DEFINE_string("value_obs_key", "state", "Value obs key")
 # endregion
 
+"""Get RL ready-made config (config dir)."""
 def get_rl_config(env_name: str) -> config_dict.ConfigDict:
   if env_name in mujoco_playground.manipulation._envs:
     if _VISION.value:
@@ -140,19 +144,17 @@ def get_rl_config(env_name: str) -> config_dict.ConfigDict:
 
   raise ValueError(f"Env {env_name} not found in {registry.ALL_ENVS}.")
 
-
+"""Run training and evaluation for the specified environment."""
 def main(argv):
-  """Run training and evaluation for the specified environment."""
-
+  
   del argv
 
   # Load environment configuration
-  env_cfg = registry.get_default_config(_ENV_NAME.value)
-
+  env_cfg = registry.get_default_config(_ENV_NAME.value)  # NOTE: dm_control_suite/cartpole.py
   ppo_params = get_rl_config(_ENV_NAME.value)
 
   """ Set PPO params and env config """
-  # region
+  # region 
   if _NUM_TIMESTEPS.present:
     ppo_params.num_timesteps = _NUM_TIMESTEPS.value
   if _PLAY_ONLY.present:
